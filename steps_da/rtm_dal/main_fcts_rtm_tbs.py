@@ -2,19 +2,17 @@
 
 # Import python functions for DAL computation
 from .dyn_algos_marina import read_dyn_algos
-import io_handler
+import .io_handler
 
 # Import RTM python code
-import rtm_dal.rtm_amsr_fcts as rtm_amsr
+import .rtm_amsr_fcts as rtm_amsr
 
 from sklearn import linear_model
-import pandas as pd
-import csv
 
-import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../steps_da')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from main_imports import *
 
 def compute_dal() : #date, tpd_dir, json_dir) :    
@@ -41,7 +39,7 @@ def compute_dal() : #date, tpd_dir, json_dir) :
     # Loop through the interval of 7 days
     for i in range(-(interval - 1), 1):
          
-        current_date = date_obj + datetime.timedelta(days = i); current_date_str = current_date.strftime('%Y%m%d')           
+        current_date = date_obj + datetime.datetime.timedelta(days = i); current_date_str = current_date.strftime('%Y%m%d')           
         
         # TPA files (JSON files)
         sat_id = 'amsr_gw1'; corr = 'ucorr'; period = '7'
@@ -254,13 +252,13 @@ def run_rtm(version = 1) : #date, sat_dir, model_dir, days_forecast = 10, versio
     if config.fdays == 1 : datei = config.date;
     else :
         # Convert the string to a datetime object and substract days  
-        date2 = datetime.datetime.strptime(config.date, '%Y%m%d') - datetime.timedelta(days = config.fdays - 1)
+        date2 = datetime.datetime.strptime(config.date, '%Y%m%d') - datetime.datetime.timedelta(days = config.fdays - 1)
         # Convert datetime object back to string
         datei = date2.strftime("%Y%m%d") 
     print(config.fdays, datei)
 
     if version == 1 : 
-        coeffs = read_csv_coefficients_plan() #config.coeffs_filename, config.date) 
+        coeffs = read_csv_coefficients_plan(config.coeffs_filename, config.date) 
         
     # Open satellite file    
     files_sat = glob.glob(os.path.join(config.sat_data_dir, config.date[0:4], f"*{config.date}*nc")) 

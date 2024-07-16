@@ -1,23 +1,29 @@
-#Preparation of observations for SYN and ASYN anlysis (L4 and L3 SIC obs)
-
-# Import python functions for DAL computation
-from .dyn_algos_marina import read_dyn_algos
-import io_handler
-
-# Import RTM python code
-import rtm_dal.rtm_amsr_fcts as rtm_amsr
-
-from sklearn import linear_model
+import numpy as np
+import netCDF4 as nc
+import xarray as xr
 import pandas as pd
-import csv
+import glob, os, sys, csv
+from datetime import datetime, timedelta
+from sklearn import linear_model
 
-import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import config
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../steps_da')))
-from main_imports import *
+########## Import python functions for DAL computation
+from dyn_algos_marina import read_dyn_algos
+import io_handler
+########## Import RTM python code
+import rtm_amsr_fcts as rtm_amsr
 
-def compute_dal() : #date, tpd_dir, json_dir) :    
+
+
+class globalVars():
+    channels = ('tb19v', 'tb19h', 'tb37v', 'tb37h') # AMSR2 channels used in the RTM simulation
+    Nens = 10 # Model ensemble size
+    mask_file = '/lustre/storeB/project/copernicus/acciberg/metnotopaz5_ens/2024/01/07/20240107_dm-metno-MODEL-topaz5-ARC-b20231229-fv02.0_mem005.nc' # File used for masking RTM output
+    model = 'topaz' # Model used for the RTM simulation
+    size_tpd_data = 5000 # TPD files contain arrays with dimension equal to 5000
+
+    
+    
+def compute_dal(date, tpd_dir, json_dir) :    
     
     '''
     This function computes Distance Along the Line (DAL, Lavergne et al., 2019) from observed TBs (19v, 37h, 37v)
@@ -32,26 +38,24 @@ def compute_dal() : #date, tpd_dir, json_dir) :
     '''  
     
     interval = 7 # DAL is computed for a period of 7 days    
-    m_dal_norm, m_dal_owf = [np.zeros((interval, config.size_tpd_data)) for _ in range(2)]
+    m_dal_norm, m_dal_owf = [np.zeros((interval, globalVars.size_tpd_data)) for _ in range(2)]
     list_tpd_files = []  
     
     # Convert the string to a datetime object
-    date_obj = datetime.datetime.strptime(config.date, '%Y%m%d')
+    date_obj = datetime.strptime(date, '%Y%m%d')
     
     # Loop through the interval of 7 days
     for i in range(-(interval - 1), 1):
          
-        current_date = date_obj + datetime.timedelta(days = i); current_date_str = current_date.strftime('%Y%m%d')           
+        current_date = date_obj + timedelta(days = i); current_date_str = current_date.strftime('%Y%m%d')           
         
         # TPA files (JSON files)
         sat_id = 'amsr_gw1'; corr = 'ucorr'; period = '7'
         centre = False; algorithms = ['SICCI3LF']; ignore = False; yesterday = False
-        tpa_file = f"{config.tpa_data_dir}{current_date.strftime('%Y')}/{current_date.strftime('%m')}/"
-        #f"{json_dir}{current_date.strftime('%Y')}/{current_date.strftime('%m')}/"
+        tpa_file = f"{json_dir}{current_date.strftime('%Y')}/{current_date.strftime('%m')}/"
         dyn_algos_return = read_dyn_algos(sat_id, tpa_file, corr, period, current_date, centre, algorithms, ignore, yesterday)
         # TPD files
-        swath_filename = f"{config.tpd_data_dir}dyn_tp_nh_amsr_gw1_ucorr_{current_date_str}_oneday.nc" 
-        #f"{tpd_dir}dyn_tp_nh_amsr_gw1_ucorr_{current_date_str}_oneday.nc" 
+        swath_filename = f"{tpd_dir}dyn_tp_nh_amsr_gw1_ucorr_{current_date_str}_oneday.nc" 
         swath_file = io_handler.SwathFactory.get_swath(sat_id, swath_filename)
         list_tpd_files.append(swath_filename) # TPD file list to be used in compute_coeffs function        
         print('TPA file: ', tpa_file)
@@ -79,7 +83,7 @@ def compute_dal() : #date, tpd_dir, json_dir) :
 
 
 
-def compute_coeffs(dal_norm, list_tpd_files) : #date, dal_norm, list_tpd_files, coeffs_filename) :
+def compute_coeffs(date, dal_norm, list_tpd_files, coeffs_filename) :
     
     '''
     This function computes the coefficients of a 2D-plane: Emissivity = 2Dplane(DAL, T2M)
@@ -95,38 +99,38 @@ def compute_coeffs(dal_norm, list_tpd_files) : #date, dal_norm, list_tpd_files, 
     amsr2_eia = 55
     
     # Emissivity and T2M arrays to be filled with TPD data
-    m_em = np.zeros((len(config.channels), len(list_tpd_files), config.size_tpd_data));
-    m_t2m = np.zeros((len(list_tpd_files), config.size_tpd_data));
+    m_em = np.zeros((len(globalVars.channels), len(list_tpd_files), globalVars.size_tpd_data));
+    m_t2m = np.zeros((len(list_tpd_files), globalVars.size_tpd_data));
     
     # Loop that computes Effective Emissivity data to be saved in m_em and reads T2M data to be saved in m_t2m    
     for ifile, file_tpd in enumerate(list_tpd_files):                
         v, w, l, t, tb_obs = read_era5(file_tpd) 
         m_t2m[ifile, :] = t
-        for ich, ch in enumerate(config.channels) : 
+        for ich, ch in enumerate(globalVars.channels) : 
             m_em[ich, ifile, :] = rtm_amsr.calc_emissivity(v, l, t, tb_obs[ch].data[:], amsr2_eia, ch[2::])        
         
     # Computation of coefficients for 2D-plane corresponding to Emissivity = plane(DAL, T2M)    
-    m_a1, m_a2, m_c = [np.zeros(len(config.channels)) for _ in range(3)]
-    for ich in range(0, len(config.channels)) :
+    m_a1, m_a2, m_c = [np.zeros(len(globalVars.channels)) for _ in range(3)]
+    for ich in range(0, len(globalVars.channels)) :
         x1, y1, z1 = m_t2m.flatten(), dal_norm.flatten(), m_em[ich, :].flatten() # Z = a1*X + a2*Y + c
         X_data = np.array([x1, y1]).T; Y_data = z1
         reg = linear_model.LinearRegression().fit(X_data, Y_data) 
-        print('Channel :', config.channels[ich])
+        print('Channel :', globalVars.channels[ich])
         print("coefficients of equation of plane, (a1, a2): ", reg.coef_)
         print("value of intercept, c:", reg.intercept_)
         m_a1[ich] = reg.coef_[0]; m_a2[ich] = reg.coef_[1]; m_c[ich] = reg.intercept_
         
     # Writing 2D plane coefficients to a CSV file
-    with open(config.coeffs_filename, 'w', newline = '') as file:
+    with open(coeffs_filename, 'w', newline = '') as file:
         writer = csv.writer(file)
         writer.writerow(['date', 'ch', 'a1', 'a2', 'c'])
-        for ich, ch in enumerate(config.channels):
-            row = [config.date if ich == 0 else '', ch[2::], m_a1[ich], m_a2[ich], m_c[ich]]
+        for ich, ch in enumerate(globalVars.channels):
+            row = [date if ich == 0 else '', ch[2::], m_a1[ich], m_a2[ich], m_c[ich]]
             writer.writerow(row)  
             
             
 
-def read_csv_coefficients_plan() : #coeffs_filename, date) :
+def read_csv_coefficients_plan(coeffs_filename, date) :
         
     '''
     This function reads the coefficients of a 2D-plane: Emissivity = plane(DAL, T2M)
@@ -138,14 +142,14 @@ def read_csv_coefficients_plan() : #coeffs_filename, date) :
         coeffs: the 2D-plane coefficients
     '''
     
-    df = pd.read_csv(config.coeffs_filename) 
+    df = pd.read_csv(coeffs_filename) 
     
-    index = df[df['date'] == float(config.date)].index.tolist()
+    index = df[df['date'] == float(date)].index.tolist()
     if len(index) > 1 : 
         return 'The date appears more than once in the csv file, check!'
     
     m_a1, m_a2, m_c = ([] for _ in range(3)); coeffs = dict()
-    for ich, ch in enumerate(config.channels) :
+    for ich, ch in enumerate(globalVars.channels) :
         coeffs[ch[2::]] = dict()
         m_a1.append(df.iloc[index[0] + ich]['a1'])
         coeffs[ch[2::]]['a1'] = df.iloc[index[0] + ich]['a1']
@@ -188,7 +192,7 @@ def read_era5(filename, type_file = 'tpd', noise = False) :
         variables = ("cice_tcwv", "cice_wind_speed", "cice_tclv", "cice_air_temp")
         v, w, l, t = [replace_invalid_values(era5_data[var][0, :]) for var in variables]
         
-        for ch in config.channels:
+        for ch in globalVars.channels:
             tb_sat[ch] = replace_invalid_values(era5_data[f"cice_{ch}"][0, :])
         
         return v, w, l, t, tb_sat
@@ -200,7 +204,7 @@ def read_era5(filename, type_file = 'tpd', noise = False) :
         dal = (era5_data.dal_SICCI3LF_corrSICCI3LF[0, :] / 100).isel(yc = slice(None, None, -1))
         sic_sat = (era5_data.ct_SICCI3LF_corrSICCI3LF[0, :] / 100).clip(0, 1).isel(yc = slice(None, None, -1))
         
-        for ch in config.channels:
+        for ch in globalVars.channels:
             tb_sat[ch] = era5_data[ch][0, :].isel(yc = slice(None, None, -1))
         
         if noise:
@@ -227,14 +231,14 @@ def read_amsr2(filename):
     sat_data = xr.open_dataset(filename) 
     sic_sat = ((sat_data.ct_SICCI3LF_corrSICCI3LF[0, :]/100).clip(0, 1)).isel(yc = slice(None, None, -1))
     tb_sat = dict();
-    for ch in config.channels :  
+    for ch in globalVars.channels :  
         tb_sat[ch] = dict()
         tb_sat[ch] = (sat_data[ch][0, :]).isel(yc = slice(None, None, -1));    
     return tb_sat, sic_sat
 
 
 
-def run_rtm(version = 1) : #date, sat_dir, model_dir, days_forecast = 10, version = 0, coeffs_filename = None):
+def run_rtm(date, sat_dir, model_dir, days_forecast = 10, version = 0, coeffs_filename = None):
     
     '''
     This function reads the coefficients of a 2D-plane: Emissivity = plane(DAL, T2M)
@@ -250,37 +254,38 @@ def run_rtm(version = 1) : #date, sat_dir, model_dir, days_forecast = 10, versio
         sic_model: dictionnary of model SIC; unity: []
         em_rtm if version=1; unity:
     '''    
+    
     # Define dates needed to select model file
-    if config.fdays == 1 : datei = config.date;
+    if days_forecast == 1 : datei = date;
     else :
         # Convert the string to a datetime object and substract days  
-        date2 = datetime.datetime.strptime(config.date, '%Y%m%d') - datetime.timedelta(days = config.fdays - 1)
+        date2 = datetime.strptime(date, '%Y%m%d') - timedelta(days = days_forecast - 1)
         # Convert datetime object back to string
         datei = date2.strftime("%Y%m%d") 
-    print(config.fdays, datei)
+    print(days_forecast, datei)
 
     if version == 1 : 
-        coeffs = read_csv_coefficients_plan() #config.coeffs_filename, config.date) 
+        coeffs = read_csv_coefficients_plan(coeffs_filename, date) 
         
     # Open satellite file    
-    files_sat = glob.glob(os.path.join(config.sat_data_dir, config.date[0:4], f"*{config.date}*nc")) 
+    files_sat = glob.glob(os.path.join(sat_dir, date[0:4], f"*{date}*nc")) 
     # Read ERA5 and AMSR2 variables from file
     v, w, l, t, tbs, sic, dal, eia = read_era5(files_sat[0], type_file = 'amsr2', noise = False)
     
     sic_model = dict(); tb_rtm = dict(); em_rtm = dict();
     
-    for ch in config.channels :  
+    for ch in globalVars.channels :  
         tb_rtm[ch] = dict(); em_rtm[ch] = dict();
         print('Computing TBs for channel ', ch[2::])
-        for imem in range(1, config.Nens + 1) :            
+        for imem in range(1, globalVars.Nens + 1) :            
             mem = 'mem' + "{0:03}".format(imem)
             print('Computing TBs for member ', mem)
             sic_model[mem] = dict()
             
             # Ensure model_dir does not end with a slash
-            model_dir = config.model_data_dir.rstrip('/')
+            model_dir = model_dir.rstrip('/')
             # Get the list of matching files
-            files_model = glob.glob(os.path.join(config.model_data_dir, config.date[0:4], config.date[4:6], config.date[6:8], f"*{config.date}*{datei}*{mem}*nc"))
+            files_model = glob.glob(os.path.join(model_dir, date[0:4], date[4:6], date[6:8], f"*{date}*{datei}*{mem}*nc"))
             
             model_data = xr.open_dataset(files_model[0]) # Open topaz model files
             
@@ -303,7 +308,7 @@ def run_rtm(version = 1) : #date, sat_dir, model_dir, days_forecast = 10, versio
 
 
 
-def save_rtm_tbs(tb_rtm, newfiles_dir) : #date, tb_rtm, newfiles_dir) :   
+def save_rtm_tbs(date, tb_rtm, newfiles_dir) :   
     
     '''  
     This function saves the RTM TBs in netCDF files
@@ -317,11 +322,11 @@ def save_rtm_tbs(tb_rtm, newfiles_dir) : #date, tb_rtm, newfiles_dir) :
         netCDF files are created and RTM TBs data written
     '''    
    
-    for imem in range(1, config.Nens + 1) :        
+    for imem in range(1, globalVars.Nens + 1) :        
         mem = 'mem' + "{0:03}".format(imem)
-        new_file = f"{newfiles_dir}{config.model}_tb_{config.date}_{mem}.nc"
+        new_file = f"{newfiles_dir}{globalVars.model}_tb_{date}_{mem}.nc"
         
-        with netCDF4.Dataset(new_file, mode = "w") as tb_data, netCDF4.Dataset(config.mask_file, mode = "r") as model_data :
+        with nc.Dataset(new_file, mode = "w") as tb_data, nc.Dataset(globalVars.mask_file, mode = "r") as model_data :
             tb_data.createDimension("time", size = 1)
             tb_data.createDimension("x", size = model_data.dimensions["x"].size)
             tb_data.createDimension("y", size = model_data.dimensions["y"].size)
@@ -331,6 +336,6 @@ def save_rtm_tbs(tb_rtm, newfiles_dir) : #date, tb_rtm, newfiles_dir) :
             x = tb_data.createVariable("x", float, dimensions = ("x"))
             x[:] = np.arange(0, x.size)
             
-            for var in config.channels :
+            for var in globalVars.channels :
                 tb_var = tb_data.createVariable(var, float, dimensions = ("time", "y", "x"))
                 tb_var[:] = tb_rtm[var][mem].data
