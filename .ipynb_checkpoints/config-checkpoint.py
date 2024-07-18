@@ -14,7 +14,7 @@ model = 'topaz' # Model used for the RTM simulation
 size_tpd_data = 5000 # TPD files contain arrays with dimension equal to 5000
 
 # EnKF variables
-assim = 'exp_tb' # Assimilation of SIC (exp_sic) or TB (exp_tb)
+assim = 'exp_sic' # Assimilation of SIC (exp_sic) or TB (exp_tb)
 
 ###################################################################################################################################
 ##### Define data directories and file names

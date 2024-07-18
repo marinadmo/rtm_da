@@ -123,12 +123,9 @@ def analysis_maps() :
     data2 = np.ma.masked_array((np.nanmean(list(sic_model_ensa.values()), axis = 0) - np.nanmean(list(sic_model_ensb.values()), axis = 0)), mask = new_mask)
     data3 = np.ma.masked_array(np.nanstd(list(sic_model_ensa.values()), axis = 0), mask = new_mask)
     data4 = np.nanmean(list(sic_model_ensa.values()), axis = 0) - sic_sat
-    print(np.nanmean(data2), np.nanmean(data3), np.nanmean(data4))
     mad_xb = np.nanmean(abs(np.nanmean(list(sic_model_ensb.values()), axis = 0) - sic_sat))
     mad_xa = np.nanmean(abs(data4))
-    print(mad_xb, mad_xa)
     incr = np.nanmean(abs(data2))
-    print(incr)
 
     # Create a 2x2 subplot layout
     fig, axes = plt.subplots(1, 3, figsize = (15, 8), subplot_kw={'projection': ccrs.NorthPolarStereo()})
