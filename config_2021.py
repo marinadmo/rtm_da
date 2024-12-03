@@ -45,8 +45,9 @@ rtm_tbs_dir = f"{main_data_dir}marina/topaz_tbs/{date}/" # RTM TOPAZ Tbs directo
 coeffs_filename = f"{main_data_dir}marina/coefficients/{date[0:4]}/coefficients_{date}.csv" # file name that will contain 2D-plane coefficients
 
 # EnKF output
-my_exp = f"{assim}" # experiment subfolder
-storage_dir = f"{main_data_dir}marina/enkf_exps/exps_{date[0:4]}/{my_exp}/{date}/" # storage directory (input and output data to/from EnKF)
+exps_dir = f"{main_data_dir}marina/enkf_exps/"
+#my_exp = f"{assim}" # experiment subfolder
+storage_dir = f"{exps_dir}/exps_{date[0:4]}/{assim}/{date}/" # storage directory (input and output data to/from EnKF)
 enkf_run_dir = f"/lustre/storeB/users/marinadm/enkf_run/acciberg/{assim}/" # EnKF run directory
 # Figures
 figures_dir = f"{main_data_dir}marina/figures/rtm_git_figures/" # Figure folder

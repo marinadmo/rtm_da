@@ -149,8 +149,11 @@ def calc_epsilon(Ts, channel, freq = None) :
     #
     llambda = (light_speed/(freq * 1E9))
     #eq 35
+    #print('lambda_R:', lambda_R)
+    #print('llambda:', llambda)
+    #print('ny:', ny)
     epsilon = epsilon_R + ((epsilon_S - epsilon_R)/(1.0 + ((cmath.sqrt(-1) * lambda_R)/llambda)**(1.0 - ny))) - ((2.0 * cmath.sqrt(-1) * sigma * llambda)/light_speed)
-    
+        
     return epsilon
 
 def calc_ocean_emissivity(W, Ts, theta, channel) :
@@ -231,8 +234,6 @@ def calc_emissivity(V, L, Ts, Tb, theta, channel) :
     """
   
     _, TBD, _, TBU, tau = calc_down_up_welling(V, L, Ts, theta, channel) 
-    #emissivity_value = (Tb - TBU - TBD)/(tau * (Ts - TBD))
-    #print(np.nanmin(tau), np.nanmax(tau))
     emissivity_value = (Tb - TBU - tau * TBD)/(tau * (Ts - TBD))
     
     return emissivity_value
@@ -396,21 +397,9 @@ def observed_tb(V, W, L, Ts, ice_conc, theta, channel, freq = None) :
     emissivity = calc_ocean_emissivity(W, Ts, theta, channel)
     
     #eq.61 sky radiation scattered upward by Earth surface
-    #if tbomega == 0 :
-    #    T_BOmega = ((1 + Omega) * (1 - tau) * (TD - T_C) + T_C)*(1 - emissivity) #*R
-    #elif tbomega == 1 :
-    #    T_BOmega = TBD * Omega # Junshen ssmi
-    #elif tbomega == 2 :
-    T_BOmega = ((1 + Omega) * (1 - tau) * (TD - T_C) + T_C) # Bug removed
+    T_BOmega = ((1 + Omega) * (1 - tau) * (TD - T_C) + T_C) 
     
     # Calculate Tb
-    #if not fix_bug :
-    #    Tb = TBU +  \
-    #                tau * (
-    #                (1.0 - ice_conc) * emissivity * Ts + 
-    #                ice_conc * e_ice * Ti + 
-    #                (1.0 - ice_conc) * (1.0 - emissivity) * (T_BOmega + tau * T_C) +
-    #                ice_conc * (1.0 - e_ice) * (TBD + tau * T_C))
     Tb = TBU +  \
                 tau * (
                 (1.0 - ice_conc) * emissivity * Ts + 
@@ -537,62 +526,10 @@ def calc_emissivity_plan(x, y, channel, dict_coeffs) :
     z : float or numpy array
         Simulated emissivity
     
-    """    
-    #print(channel)
-    if channel == '19v' :
-        #a1, a2 = -0.0039418, 0.00123587
-        #c = 1.5071746109373407
-        # New DAL
-        #a1, a2 = -0.00343549, 0.00100124
-        #c = 1.8896396281447525
-        # Tau correction
-        if len(dict_coeffs) == 0 :
-            a1, a2 = -0.00337051, 0.00099979
-            c = 1.8745256850214123
-        else :
-            a1, a2 = dict_coeffs['tb19v']['a1'], dict_coeffs['tb19v']['a2']
-            c = dict_coeffs['tb19v']['c']
-    elif channel == '19h' :
-        #a1, a2 = -0.00463668, 0.00163327
-        #c = 1.451338502883941
-        # New DAL
-        #a1, a2 = -0.00354037, 0.0013491
-        #c = 1.8429759511865502
-        # Tau correction
-        if len(dict_coeffs) == 0 :
-            a1, a2 = -0.00347539, 0.00134766
-            c = 1.8278619985001847
-        else :
-            a1, a2 = dict_coeffs['tb19h']['a1'], dict_coeffs['tb19h']['a2']
-            c = dict_coeffs['tb19h']['c']
-    elif channel == '37v' :
-        #a1, a2 = -0.00449517, 0.00314335;
-        #c = 0.8487678680216986;
-        # New DAL
-        #a1, a2 = -0.00430801, 0.00304642
-        #c = 2.102841624126847
-        # Tau correction   
-        if len(dict_coeffs) == 0 :
-            a1, a2 = -0.00393366, 0.00303603
-            c = 2.0184206240646656
-        else :
-            a1, a2 = dict_coeffs['tb37v']['a1'], dict_coeffs['tb37v']['a2']
-            c = dict_coeffs['tb37v']['c']
-    elif channel == '37h' :
-        #a1, a2 = -0.0052445, 0.00331035;
-        #c = 0.9112519878923269;
-        # New DAL
-        #a1, a2 = -0.00437083, 0.00308015
-        #c = 2.0539885864475265
-        # Tau correction
-        if len(dict_coeffs) == 0 :
-            a1, a2 = -0.00399648, 0.00306976
-            c = 1.969567597989889
-        else :
-            a1, a2 = dict_coeffs['tb37h']['a1'], dict_coeffs['tb37h']['a2']
-            c = dict_coeffs['tb37h']['c']
-        
-    #x1, y1 = x.flatten(), y.flatten()
+    """ 
+    a1, a2 = dict_coeffs[channel]['a1'], dict_coeffs[channel]['a2']
+    c = dict_coeffs[channel]['c']
+    
     x1, y1 = x, y
     z = a1*x1 + a2*y1 + c
     return z

@@ -149,8 +149,11 @@ def calc_epsilon(Ts, channel, freq = None) :
     #
     llambda = (light_speed/(freq * 1E9))
     #eq 35
+    #print('lambda_R:', lambda_R)
+    #print('llambda:', llambda)
+    #print('ny:', ny)
     epsilon = epsilon_R + ((epsilon_S - epsilon_R)/(1.0 + ((cmath.sqrt(-1) * lambda_R)/llambda)**(1.0 - ny))) - ((2.0 * cmath.sqrt(-1) * sigma * llambda)/light_speed)
-    
+        
     return epsilon
 
 def calc_ocean_emissivity(W, Ts, theta, channel) :
