@@ -1,0 +1,9 @@
+PRODUCT = ALL
+TYPE = Ice_concentration
+READER = gridded_xy
+FILE = obs/amsr2_topaz_obs_202*.nc
+PARAMETER VARNAME = ice_conc
+PARAMETER LONNAME = longitude
+PARAMETER LATNAME = latitude
+Parameter TIMENAME = time
+ERROR_STD = 0.04 

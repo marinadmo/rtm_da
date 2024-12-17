@@ -1,0 +1,31 @@
+NAME = topaz5
+
+VAR = aice_d
+GRID = topaz_ice
+VAR = hi_d
+GRID = topaz_ice
+VAR = hs_d
+GRID = topaz_ice
+VAR = Tsfc_d
+GRID = topaz_ice
+VAR = sst_d
+GRID = topaz_ice
+VAR = sss_d
+GRID = topaz_ice
+VAR = alvl_d
+GRID = topaz_ice
+VAR = vlvl_d
+GRID = topaz_ice
+VAR = iage
+GRID = topaz_ice
+VAR = FYarea
+GRID = topaz_ice
+VAR = tb19v
+GRID = topaz_ice
+VAR = tb19h
+GRID = topaz_ice
+VAR = tb37v
+GRID = topaz_ice
+VAR = tb37h
+GRID = topaz_ice
+

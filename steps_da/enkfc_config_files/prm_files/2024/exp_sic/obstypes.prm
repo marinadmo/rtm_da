@@ -1,0 +1,9 @@
+NAME = Ice_concentration
+ISSURFACE = 1
+VAR = siconc
+ASYNC = 0
+HFUNCTION = standard  #vertsum
+MINVALUE = 0
+MAXVALUE = 1.0
+RFACTOR = 2 #50 #20 #10 #22
+LOCRAD = 50

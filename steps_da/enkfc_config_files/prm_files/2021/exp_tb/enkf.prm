@@ -1,0 +1,30 @@
+MODE = EnKF
+SCHEME = DEnKF
+
+MODEL = model.prm
+GRID = grid.prm
+OBSTYPES = obstypes.prm
+
+OBS = obs.prm
+DATE = 12188 days since 1990-01-01
+
+ENSDIR = ensemble_100
+ENSSIZE = 10
+
+INFLATION = 1.2
+RFACTOR = 1
+KFACTOR = 2
+LOCRAD = 20 
+
+STRIDE = 3
+FIELDBUFFERSIZE = 4
+
+REGION Global   -180  180   -90     90
+
+POINTLOG 22 77
+
+EXITACTION = SEGFAULT
+
+#WINDOWMIN = -1.0
+#WINDOWMAX = 0.0
+

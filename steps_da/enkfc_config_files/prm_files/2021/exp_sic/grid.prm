@@ -1,0 +1,8 @@
+NAME = topaz_ice
+VTYPE = z
+DATA = conf/mask_topaz5.nc
+XVARNAME = longitude
+YVARNAME = latitude
+DEPTHVARNAME = model_depth
+ZVARNAME = zt
+NUMLEVELSVARNAME = model_mask

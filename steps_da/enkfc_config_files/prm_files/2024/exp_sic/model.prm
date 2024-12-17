@@ -1,0 +1,15 @@
+NAME = topaz5
+
+VAR = siconc
+GRID = topaz_ice
+VAR = sithick
+GRID = topaz_ice
+VAR = tb19v
+GRID = topaz_ice
+VAR = tb19h
+GRID = topaz_ice
+VAR = tb37v
+GRID = topaz_ice
+VAR = tb37h
+GRID = topaz_ice
+
