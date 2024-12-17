@@ -20,7 +20,7 @@ from main_imports import *
 def compute_dal() : #date, tpd_dir, json_dir) :    
     
     '''
-    This function computes Distance Along the Line (DAL, Lavergne et al., 2019) from observed TBs (19v, 37h, 37v)
+    This function computes Distance Along the Line (DAL, Lavergne et al., 2019) from observed Tbs (19v, 37h, 37v)
     
     Input
         date: string format (ex: '20240101')
@@ -308,13 +308,13 @@ def read_era5(filename, type_file = 'tpd', noise = False) :
         filename: netCDF file containing the data, type_file can be tpd or amsr2
     
     Output
-        v: array, water vapor; unity:
-        w: array, wind speed; unity: m/s        
-        l: array, liquid water; unity:
-        t: array, air temperature; unity: Kelvin        
-        tb: dictionary, AMSR2 TBs; unity: Kelvin
+        v: array, water vapor; unity: [mm]
+        w: array, wind speed; unity: [m/s]        
+        l: array, liquid water; unity: [mm]
+        t: array, air temperature; unity: [K]        
+        tb: dictionary, AMSR2 TBs; unity: [K]
         sic: array, AMSR2 sea ice concentration; unity: []
-        dal: array, distance along the line; unity: Kelvin
+        dal: array, distance along the line; unity: [K]
         eia: AMSR2 inclination angle; unity: []
     '''
     
@@ -368,7 +368,7 @@ def read_amsr2(filename):
         filename: AMSR2 netCDF file 
     
     Output
-        tb: dictionary of AMSR2 TBs; unity: Kelvin        
+        tb: dictionary of AMSR2 Tbs; unity: [K]        
         sic: array of AMSR2 sea ice concentration; unity: []
     '''
     
@@ -400,9 +400,9 @@ def run_rtm(version = 1, days_forecast = 10) : #date, sat_dir, model_dir, days_f
             version 0 corresponds to the original RTM
             version 1 correspond to the updated RTM
     Output
-        tb_rtm: dictionnary of RTM TBs; unity: Kelvin
+        tb_rtm: dictionnary of RTM Tbs; unity: [K]
         sic_model: dictionnary of model SIC; unity: []
-        em_rtm if version=1; unity:
+        em_rtm if version=1; unity: []
     '''    
     
     # Define dates needed to select model file
@@ -480,16 +480,16 @@ def run_rtm_swaths(version = 1) :
             version 0 corresponds to the original RTM
             version 1 correspond to the updated RTM
     Output
-        tb_rtm: dictionnary of RTM TBs; unity: Kelvin
+        tb_rtm: dictionnary of RTM Tbs; unity: [K]
         sic_model: dictionnary of model SIC; unity: []
-        em_rtm if version=1; unity:
+        em_rtm if version=1; unity: []
     '''    
     
     if version == 1 : 
         coeffs = read_csv_coefficients_plan() #config.coeffs_filename, config.date) 
         
     # Open satellite file  
-    files_sat = glob.glob(os.path.join(config.sat_data_dir, f"*{config.date}*nc"))
+    files_sat = glob.glob(os.path.join(config.sat_data_dir_means, f"*{config.date}*nc"))
     # Read ERA5 and AMSR2 variables from file
     v, w, l, t, tbs, sic, dal, eia = read_era5(files_sat[0], type_file = 'amsr2', noise = False)
     
@@ -534,22 +534,23 @@ def run_rtm_swaths(version = 1) :
     elif version == 1 : return tb_rtm, em_rtm, sic_model
 
 
-def save_rtm_tbs(tb_rtm, newfiles_dir, swaths = False) : #date, tb_rtm, newfiles_dir) :   
+def save_rtm_tbs(tb_rtm, newfiles_dir, swaths = False) :
     
     '''  
     This function saves the RTM TBs in netCDF files
     
     Input
         date: string format (ex: '20240101')
-        tb_rtm: dictionnary of RTM TBs; unity: K        
+        tb_rtm: dictionnary of RTM Tbs; unity: [K]       
         newfiles_dir: directory where files are saved
         
     Output
-        netCDF files are created and RTM TBs data written
+        netCDF files are created and RTM Tbs data written
     '''    
 
-    if '2024' in config.date[0:4] : dimx, dimy = 'x', 'y'
-    elif '2021' in config.date[0:4] : dimx, dimy = 'ni', 'nj'    
+    #if '2024' in config.date[0:4] : dimx, dimy = 'x', 'y'
+    #elif '2021' in config.date[0:4] : dimx, dimy = 'ni', 'nj'    
+    dimx, dimy = 'x', 'y'
     
     if swaths : nsize = 23
     else : nsize = 1

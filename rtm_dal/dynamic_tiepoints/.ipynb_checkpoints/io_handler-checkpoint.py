@@ -12,10 +12,7 @@ import numpy.ma as ma
 from netCDF4 import Dataset, num2date
 from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import rtm_smmr
-import rtm_ssmi
-import rtm_ssmis
-import rtm_amsr
+
 import dynamic_tiepoints as dtp
 
 fill_values = {np.int8:-127, np.int16:-32767, np.float32:-1e10}

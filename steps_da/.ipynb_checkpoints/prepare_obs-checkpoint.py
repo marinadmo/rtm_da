@@ -1,14 +1,15 @@
 #Preparation of observations for SYN and ASYN anlysis (L4 and L3 SIC obs)
 
-from .main_imports import *
-
+import sys, os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Code to build ensemble files from model output to feed enkf-c
+from main_imports import *
 # Now you can import the config module
 import config
 
 
-def read_mask() :
+def read_mask2() :
     # Topaz5 data
     model_file = config.mask_file
     if '2024' in config.date : model_var = 'model_depth'
@@ -19,6 +20,12 @@ def read_mask() :
     mask = model_data[model_var].to_masked_array().mask
     return mask 
 
+def read_mask() :
+    model_file = config.mask_file_plots
+    model_var = 'model_mask'
+    model_data = xr.open_dataset(model_file)
+    mask = np.logical_not(model_data[model_var])
+    return mask
 
 def update_obs(infile, obsfile, passes = False) :
 
@@ -30,8 +37,7 @@ def update_obs(infile, obsfile, passes = False) :
 
     if passes : fsat2 = infile.split('_')[2].split('.')[0]
     else : fsat2 = config.date
-    print('eeee ', infile, fsat2)
-    if '2021' in config.date :
+    if '2021' in config.date : # Problem with time data in new files!! 
         files_sat2 = glob.glob(f"{config.sat_data_dir2}/*{fsat2}*nc")[0]
         print(files_sat2)
         sat_data2 = xr.open_dataset(files_sat2)
@@ -89,7 +95,7 @@ def update_obs(infile, obsfile, passes = False) :
 
 def prep_topaz() :
 
-    obs_dir = f"{config.main_data_dir}marina/enkf_exps/observations/"
+    obs_dir = f"{config.exps_dir}/observations/"
     sat_dir = f"{config.sat_data_dir}" #main_data_dir}atlems/topaz_l3/"
 
     print(f"{sat_dir}/*{config.date}*nc")
@@ -109,7 +115,7 @@ def prep_topaz() :
     
 def prep_topaz_passes() :
 	
-    obs_dir = f"{config.main_data_dir}marina/enkf_exps/observations/passes/"
+    obs_dir = f"{config.exps_dir}/observations/passes/"
     sat_dir = f"{config.sat_data_dir}" 
     
     # Check list of passes

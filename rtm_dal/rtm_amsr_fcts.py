@@ -406,7 +406,6 @@ def observed_tb(V, W, L, Ts, ice_conc, theta, channel, freq = None) :
                 ice_conc * e_ice * Ti + 
                 (1.0 - ice_conc) * (1.0 - emissivity) * (T_BOmega) +
                 ice_conc * (1.0 - e_ice) * (TBD + tau * T_C))
-        
     
     return Tb    
 

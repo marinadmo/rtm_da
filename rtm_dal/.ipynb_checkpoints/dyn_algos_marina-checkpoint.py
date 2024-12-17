@@ -14,12 +14,15 @@ import logging.config
 import numpy as np
 import netCDF4 as nc
 
-sys.path.insert(0, '/home/marinadm/python_scripts/jupyter/acciberg/tpd_files/gitlab/')
 #import io_handler
+sys.path.insert(0, '/home/marinadm/rtm_da/rtm_dal/dynamic_tiepoints/')
+#sys.path.insert(0, '/home/marinadm/python_scripts/jupyter/acciberg/tpd_files/gitlab/')
 import dynamic_tiepoints as dtp
 
-sys.path.insert(0, '/home/marinadm/pmr_sic/')
-from pmr_sic import common, hybrid_algo
+sys.path.insert(0, '/home/marinadm/rtm_da/rtm_dal/pmr_codes/')
+#sys.path.insert(0, '/home/marinadm/pmr_sic/')
+#from pmr_sic import common, hybrid_algo
+import common, hybrid_algo
 
 LOG = logging.getLogger(__name__)
 
@@ -87,7 +90,6 @@ def read_dyn_algos(sat_id, json_dir, corr, period, dt, centre, algorithms,
                 fname = 'dynAlgo_{}_{}_{}_{}_{}_{}days_avg.json'.format(area, sat_id,
                     alg.upper(), dtp.getcorr(dcorr), time_str, pstr)
             fpath = os.path.join(json_dir, fname)
-            print(fname)
             
             if ( yesterday ):
                 # If yesterday option, then allow using TPA file from an additional

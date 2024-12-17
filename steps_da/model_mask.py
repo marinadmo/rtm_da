@@ -1,10 +1,9 @@
 # Code that generates model mask from RTM TBs
 
-from .main_imports import *
-
+import sys, os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Now you can import the config module
+from main_imports import *
 import config
 
 def generate_mask() :

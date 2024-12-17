@@ -1,9 +1,10 @@
 # Code that generates model mask from RTM TBs
 
-from .main_imports import *
-
+import sys, os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Code to build ensemble files from model output to feed enkf-c
+from main_imports import *
 # Now you can import the config module
 import config
 

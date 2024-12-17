@@ -1,8 +1,8 @@
-# Code to build ensemble files from model output to feed enkf-c
-from .main_imports import *
-
+import sys, os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Code to build ensemble files from model output to feed enkf-c
+from main_imports import *
 # Now you can import the config module
 import config
 
@@ -17,22 +17,22 @@ def prep_ensemble() :
         if config.fdays == 1 : data_dir3 = config.date;
         else : 
             data_dir2 = ens_date - datetime.timedelta(days = config.fdays - 1)
-            data_dir3 = f'{data_dir2.year:04d}{data_dir2.month:02d}{data_dir2.day:02d}'
-        #print(config.fdays, data_dir3)
-        dimx, dimy = 'x', 'y'
-    elif '2021' in config.date :
-        dimx, dimy = 'ni', 'nj'
+            data_dir3 = f'{data_dir2.year:04d}{data_dir2.month:02d}{data_dir2.day:02d}'   
+    
 
     for ens in range(0, config.Nens) :
         
         if '2024' in config.date :
             files_model_path = f'{config.model_data_dir}{config.date[0:4]}/{config.date[4:6]}/{config.date[6:8]}/{config.date}*{data_dir3}*mem{ens + 1:03d}*nc'
+            dimx, dimy = 'x', 'y'
         elif '2021' in config.date :
             files_model_path = f'{config.model_data_dir}/mem{ens + 1:03d}/daily/iceh.{config.date[0:4]}-{config.date[4:6]}-{config.date[6:8]}.nc'
+            dimx, dimy = 'ni', 'nj'
                 
         for var in ice_vars:
             if var in tb_vars :
                 ice_rst_file = f'{config.rtm_tbs_dir}/means/topaz_tb_{config.date}_mem{ens + 1:03d}.nc'
+                dimx, dimy = 'x', 'y'
             else :
                 files_model = glob.glob(files_model_path)
                 #print(files_model)

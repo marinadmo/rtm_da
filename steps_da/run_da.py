@@ -1,14 +1,14 @@
-# Code to build ensemble files from model output to feed enkf-c
-from .main_imports import *
+# Run EnKF-C
 from .checks_enkf import check_dfs_srf as chk
+import sys, os
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from main_imports import *
+import config
 
 def run_enkf() :
+    
     cwd = os.getcwd()
-
-    # Add the parent directory to sys.path
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    # Now you can import the config module
-    import config
 
     # Remove previous files
     cmd('rm ' + config.enkf_run_dir + 'ensemble_100/*')

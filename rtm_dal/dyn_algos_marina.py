@@ -14,12 +14,15 @@ import logging.config
 import numpy as np
 import netCDF4 as nc
 
-sys.path.insert(0, '/home/marinadm/python_scripts/jupyter/acciberg/tpd_files/gitlab/')
 #import io_handler
+sys.path.insert(0, '/home/marinadm/rtm_da/rtm_dal/dynamic_tiepoints/')
+#sys.path.insert(0, '/home/marinadm/python_scripts/jupyter/acciberg/tpd_files/gitlab/')
 import dynamic_tiepoints as dtp
 
-sys.path.insert(0, '/home/marinadm/pmr_sic/')
-from pmr_sic import common, hybrid_algo
+sys.path.insert(0, '/home/marinadm/rtm_da/rtm_dal/pmr_codes/')
+#sys.path.insert(0, '/home/marinadm/pmr_sic/')
+#from pmr_sic import common, hybrid_algo
+import common, hybrid_algo
 
 LOG = logging.getLogger(__name__)
 

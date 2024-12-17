@@ -5,78 +5,20 @@ import cmocean
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
-from .main_imports import *
-from .checks_enkf import check_dfs_srf
+from .reading_data import *
 
+import sys, os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from main_imports import *
+# Add the parent directory to sys.path
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 # Now you can import the config module
 import config
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../steps_da/')))
+from checks_enkf import check_dfs_srf
 
-def read_obs() :
-
-    sat_data = netCDF4.Dataset(f"{config.main_data_dir}/marina/enkf_exps/observations/amsr2_topaz_obs_{config.date}.nc")
-    sic_sat = sat_data['ice_conc'][0, :]
-    
-    return sic_sat
-
-def read_obs_tb(var_tb = 0) :
-
-    sat_data = netCDF4.Dataset(f"{config.main_data_dir}/marina/enkf_exps/observations/amsr2_topaz_obs_{config.date}.nc")
-    tb_sat = sat_data[config.channels[var_tb]][0, :]
-    
-    return tb_sat
-
-#data3 = np.ma.masked_array(np.nanstd(list(sic_model_ensa.values()), axis = 0), mask = new_mask)
-def read_mask() :
-    
-    mask_data = xr.open_dataset(config.mask_file_plots)['model_mask'][:]
-    # Step 1: Invert the values (0 becomes 1, 1 becomes 0)
-    mask_data_inverted = 1 - mask_data
-
-    # Step 2: Convert to boolean (1 becomes True, 0 becomes False)
-    mask_data_bool = mask_data_inverted.astype(bool)
-    
-    return mask_data_bool
-    
-def read_model_matrix(opt = 0, vari = 0) :
-
-    sic_model_ens = dict()  
-    for imem in range(1, config.Nens + 1) :
-        mem = 'mem' + "{0:03}".format(imem)
-        print(mem)
-        #####
-        # SIC
-        if opt == 0 : filename = f"{config.storage_dir}/ensb/{mem}_{config.varnames[vari]}.nc"
-        else : filename = f"{config.storage_dir}/ensa/{mem}_{config.varnames[vari]}.nc.analysis" 
-        print(filename)
-        # Open topaz model files
-        model_data = xr.open_dataset(glob.glob(filename)[0])
-        sic_model_ens[mem] = model_data[config.varnames[vari]][0, :]
-    
-    return sic_model_ens #, new_mask
-
-def read_model_matrix_tb(var_tb = 0) :
-    
-    tb_model_ens = dict()  
-    for imem in range(1, config.Nens + 1) :
-        mem = 'mem' + "{0:03}".format(imem)
-        print(mem)
-        
-        # Background Tbs
-        filename = f"{config.rtm_tbs_dir}/topaz_tb_{config.date}_{mem}.nc" 
-        # Open topaz model files
-        print(glob.glob(filename)[0])
-        model_data = xr.open_dataset(glob.glob(filename)[0])
-        tb_model_ens[mem] = model_data[config.channels[var_tb]][0, :]
-    
-    return tb_model_ens
-
-
-def lon_lat() :
-    dataset = xr.open_dataset(config.mask_file_plots)
-    lon, lat = dataset.longitude.data, dataset.latitude.data
-    return lon, lat
 
 def background_maps(var = 'sic', var_tb = 0) :
     lon, lat = lon_lat()
@@ -165,7 +107,7 @@ def background_maps(var = 'sic', var_tb = 0) :
             fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
 
     # Savefig
-    fig.savefig(f'{config.figures_dir}subplots_background_{config.my_exp}_{var_fig}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig(f'{config.figures_dir}subplots_background_{config.assim}_{var_fig}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
 
 def no_obs_maps(vari = 0) :
     
@@ -270,7 +212,7 @@ def no_obs_maps(vari = 0) :
                 fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
 
         # Savefig
-        fig.savefig(f'{config.figures_dir}ssubplots_background_{config.my_exp}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
+        fig.savefig(f'{config.figures_dir}ssubplots_background_{config.assim}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
         
     # Analysis maps
     # List of data arrays and axes for iteration
@@ -320,7 +262,7 @@ def no_obs_maps(vari = 0) :
             fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
 
     # Savefig
-    fig.savefig(f'{config.figures_dir}ssubplots_analysis_{config.my_exp}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig(f'{config.figures_dir}ssubplots_analysis_{config.assim}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
 
 def analysis_maps(vari = 0) :
     
@@ -329,7 +271,7 @@ def analysis_maps(vari = 0) :
     sic_model_ensb = read_model_matrix(0, vari)
     new_mask = read_mask()
   
-    if 'tb' in config.my_exp : opta = 2
+    if 'tb' in config.assim : opta = 2
     else : opta = 1
     sic_model_ensa = read_model_matrix(opta, vari)
     #  (ensa - ensb)
@@ -405,7 +347,7 @@ def analysis_maps(vari = 0) :
             fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
 
     # Savefig
-    fig.savefig(f"{config.figures_dir}subplots_analysis_{config.my_exp}_{config.varnames[vari]}_{config.date}.png", bbox_inches = 'tight', dpi = 300)  
+    fig.savefig(f"{config.figures_dir}subplots_analysis_{config.assim}_{config.varnames[vari]}_{config.date}.png", bbox_inches = 'tight', dpi = 300)  
 
 def interpolation_metrics(var, lon, lat) :
     
@@ -499,4 +441,4 @@ def plot_metrics() :
     plt.subplots_adjust(wspace=0.1)
     
     # Savefig
-    fig.savefig(f"{config.figures_dir}subplots_metrics_{config.my_exp}_{config.date}.png", bbox_inches = 'tight', dpi = 300)
+    fig.savefig(f"{config.figures_dir}subplots_metrics_{config.assim}_{config.date}.png", bbox_inches = 'tight', dpi = 300)
