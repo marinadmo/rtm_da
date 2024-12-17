@@ -3,7 +3,8 @@ Define your configuration file (config.py), such as data paths, experiment name,
 
 #2 Load modules
 Load the necessary modules (Python or conda, EnKF-C module)
-source ./modules.sh
+conda activate production-10-2022
+module load enkfc/2.9.9 (https://github.com/sakov/enkf-c)
 
 #3 Run the jupyter notebook to run the standalone analysis
 Run the jupyter notebook (rtm_enkf_notebook.ipynb) to:
