@@ -4,11 +4,14 @@ config.py: example file with paths and variables names
 plotting_codes: scripts to make figures from results
 
 rtm_dal_param: RTM code and DAL parameterization scripts
-    rtm_atms_fcts.py: main RTM script (it can use different ice emissivity parameterizations)
-    main_fct_rtm_tb.py: a series of function to run the RTM, read and save data
-    dynamic_tiepoints and pmr_codes folders: they contain scripts needed for DAL parameterization (computation of coefficients)
 
-steps_da: assimilation scripts
+	rtm_atms_fcts.py: main RTM script (it can use different ice emissivity parameterizations)
+     
+	main_fct_rtm_tb.py: a series of function to run the RTM, read and save data
+    
+	dynamic_tiepoints and pmr_codes folders: they contain scripts needed for DAL parameterization (computation of coefficients)
+
+	steps_da: assimilation scripts
 
 #1 Fill in the configuration file
 Define your configuration file (config.py), such as data paths, experiment name, etc
