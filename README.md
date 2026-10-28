@@ -1,5 +1,5 @@
 #Folder information
-config_files: config.py example files with paths and variables names
+config.py: example file with paths and variables names
 plotting_codes: scripts to make figures from results
 rtm_dal_param: RTM code and DAL parameterization scripts
     rtm_atms_fcts.py: main RTM script (it can use different ice emissivity parameterizations)

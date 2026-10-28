@@ -6,3 +6,12 @@ YVARNAME = latitude
 DEPTHVARNAME = model_depth
 ZVARNAME = zt
 NUMLEVELSVARNAME = model_mask
+
+NAME = topaz_ice_tb
+VTYPE = z
+DATA = conf/mask_topaz_tbs.nc
+XVARNAME = longitude
+YVARNAME = latitude
+DEPTHVARNAME = model_depth
+ZVARNAME = zt
+NUMLEVELSVARNAME = model_mask
