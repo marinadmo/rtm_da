@@ -38,6 +38,9 @@ Load the required Python or `conda` environment and EnKF-C module:
 ```bash
 conda activate production-10-2022
 module load enkfc/2.9.9
+```
+
+---
 
 ### 3. Run assimilation experiments
 - Produce the RTM Tbs from model data
