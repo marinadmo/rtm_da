@@ -1,39 +1,42 @@
-#Preparation of observations for SYN and ASYN anlysis (L4 and L3 SIC obs)
+# Preparation of observations for SYN and ASYN anlysis (L4 and L3 SIC obs)
 
-import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Code to build ensemble files from model output to feed enkf-c
-from main_imports import *
-# Now you can import the config module
+import numpy as np
+import xarray as xr
+import glob
+from datetime import datetime, timedelta
+from subprocess import call
+
+# Function for running in terminal
+def cmd(command):
+    print(command)
+    result = call(command, shell = True)
+    if result != 0:
+        print("Command failed: %d" % result)
+    else:
+        return result
+
 import config
+print(f"Config module loaded from: {config.__file__}")
 
-
-def read_mask2() :
-    # Topaz5 data
-    model_file = config.mask_file
-    if '2024' in config.date : model_var = 'model_depth'
-    elif '2021' in config.date : model_var = 'aice_d'
-
-    print(model_file)
-    model_data = xr.open_dataset(model_file)
-    mask = model_data[model_var].to_masked_array().mask
-    return mask 
 
 def read_mask() :
-    model_file = config.mask_file_plots
+    
+    model_file = config.mask_file
     model_var = 'model_mask'
     model_data = xr.open_dataset(model_file)
     mask = np.logical_not(model_data[model_var])
+    
     return mask
 
-def update_obs(infile, obsfile, passes = False) :
+def update_obs(infile, obsfile, passes = False, bounded = True) :
 
     # Model mask
     mask = read_mask()
 
     # Open observation dataset
     sat_data = xr.open_dataset(infile)
+    print('In file:', infile)
+    print('Variables:', sat_data.variables)
 
     if passes : fsat2 = infile.split('_')[2].split('.')[0]
     else : fsat2 = config.date
@@ -55,10 +58,25 @@ def update_obs(infile, obsfile, passes = False) :
         tb37h_data = np.ma.masked_array((sat_data.tb37h.isel(yc = slice(None, None, -1)).data), mask = mask)
         x_data = sat_data.xc.data[::-1]
         y_data = sat_data.yc.data[::-1]
+        
     elif '2021' in config.date :
         lon_data = sat_data.lon.data
         lat_data = sat_data.lat.data
-        ice_data = np.ma.masked_array((sat_data.ice_conc[:]/100).clip(0, 1).data, mask = mask)
+        if bounded :
+            print(f'Bounded {bounded}')
+            ice_data = np.ma.masked_array((sat_data.ice_conc[:]/100).clip(0, 1).data, mask = mask)
+        else :
+            print(f'Bounded {bounded}')
+            ice_data = np.ma.masked_array((sat_data.ice_conc[:]/100).clip(-1.5, 1.5).data, mask = mask)    
+        # Filter OW in SIC owf_SICCI3LF_corrSICCI3LF
+        owf_sat = (sat_data.owf_SICCI3LF_corrSICCI3LF[:]); ice_data.data[owf_sat.data == 1] = 0.0
+        # Climatology file
+        clim_path = '/lustre/storeB/project/fou/fd/project/acciberg/marina/climatology/'
+        data_clim = xr.open_dataset(f'{clim_path}LandOceanLakeMask_nh_ease2-250_resampled.nc')['climatology'][int(config.date[4:6]) - 1, :, :]; data_clim = np.expand_dims(data_clim, axis = 0) 
+        print(np.shape(data_clim), np.shape(ice_data))
+        #[int(config.date[4:6]) - 1, :, :]
+        ice_data.data[data_clim.data == 0.0] = 0.0
+        
         tb19v_data = np.ma.masked_array(sat_data.tb19v.data, mask = mask)
         tb19h_data = np.ma.masked_array((sat_data.tb19h.data), mask = mask)
         tb37v_data = np.ma.masked_array((sat_data.tb37v.data), mask = mask)
@@ -95,7 +113,7 @@ def update_obs(infile, obsfile, passes = False) :
 
 def prep_topaz() :
 
-    obs_dir = f"{config.exps_dir}/observations/"
+    obs_dir = f"{config.exps_dir}/observations/means/"
     sat_dir = f"{config.sat_data_dir}" #main_data_dir}atlems/topaz_l3/"
 
     print(f"{sat_dir}/*{config.date}*nc")
@@ -105,11 +123,16 @@ def prep_topaz() :
     cmd('rm ' + new_obs_file)
     tmpfile = obs_dir + '/tmp/tmp.nc'
     tmpfile2 = obs_dir + '/tmp/tmp2.nc'
-    cmd('ncks -v lat,lon,ct_SICCI3LF_corrSICCI3LF,tb19v,tb19h,tb37v,tb37h ' + files_sat + ' ' + tmpfile )
-    cmd('ncrename -v ct_SICCI3LF_corrSICCI3LF,ice_conc ' + tmpfile + ' ' + tmpfile2 )
+    print('file sat:', files_sat)#owf_SICCI3LF_corrSICCI3LF
+    cmd('ncks -v lat,lon,ct_SICCI3LF_corrSICCI3LF,owf_SICCI3LF_corrSICCI3LF,tb19v,tb19h,tb37v,tb37h ' + files_sat + ' ' + tmpfile)
+    cmd('ncrename -v ct_SICCI3LF_corrSICCI3LF,ice_conc ' + tmpfile + ' ' + tmpfile2)
     cmd('rm ' + tmpfile)
 
-    update_obs(tmpfile2, new_obs_file)
+    bounded = True
+    if bounded : 
+        print('SIC is BOUNDED!!')
+    else : print('SIC is NOT BOUNDED!!')
+    update_obs(tmpfile2, new_obs_file, passes = False, bounded = bounded)
     cmd('rm ' + tmpfile2)
 
     
@@ -118,8 +141,10 @@ def prep_topaz_passes() :
     obs_dir = f"{config.exps_dir}/observations/passes/"
     sat_dir = f"{config.sat_data_dir}" 
     
+    # Previous day
+    previous_day = (datetime.strptime(config.date, '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d')
     # Check list of passes
-    list_passes = glob.glob(f"{sat_dir}/*{config.date}*nc") 
+    list_passes = glob.glob(f"{sat_dir}/*{previous_day}*nc") 
     print(list_passes)
 
     for file_sat in list_passes :
@@ -137,10 +162,14 @@ def prep_topaz_passes() :
         
         print(' ')
         print('PASS FILE NAME again: ', file_sat)
-        cmd('ncks -v lat,lon,ct_SICCI3LF_corrSICCI3LF,tb19v,tb19h,tb37v,tb37h ' + file_sat + ' ' + tmpfile )
+        cmd('ncks -v lat,lon,ct_SICCI3LF_corrSICCI3LF,owf_SICCI3LF_corrSICCI3LF,tb19v,tb19h,tb37v,tb37h ' + file_sat + ' ' + tmpfile )
         cmd('ncrename -v ct_SICCI3LF_corrSICCI3LF,ice_conc ' + tmpfile + ' ' + tmpfile2 )
         print(' ')
         cmd('rm ' + tmpfile)
 
-        update_obs(tmpfile2, new_obs_file, passes = True)
+        bounded = True
+        if bounded : 
+            print('SIC is BOUNDED!!')
+        else : print('SIC is NOT BOUNDED!!')
+        update_obs(tmpfile2, new_obs_file, passes = True, bounded = bounded)
         cmd('rm ' + tmpfile2)

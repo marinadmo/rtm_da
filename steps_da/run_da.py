@@ -1,10 +1,21 @@
 # Run EnKF-C
 from .checks_enkf import check_dfs_srf as chk
-import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main_imports import *
+
+import glob, os
+from datetime import datetime, timedelta
+from subprocess import call
+
+# Function for running in terminal
+def cmd(command):
+    print(command)
+    result = call(command, shell = True)
+    if result != 0:
+        print("Command failed: %d" % result)
+    else:
+        return result
+
 import config
+print(f"Config module loaded from: {config.__file__}")
 
 def run_enkf() :
     
@@ -20,13 +31,18 @@ def run_enkf() :
     cmd('make clean')
     
     # Copy prm files
-    prm_files = f'/lustre/storeB/users/marinadm/enkf_run/acciberg/{config.date[0:4]}_prm_files/{config.assim}/' 
-    cmd(f'cp  {prm_files}*prm {config.enkf_run_dir}')
+    prm_files = f'/lustre/storeB/users/marinadm/enkf_run/acciberg/{config.date[0:4]}_prm_files/{config.assim[0:7]}/' 
+    #cmd(f'cp  {prm_files}*prm {config.enkf_run_dir}')
     
     # Link observation
-    if 'asyn' in config.assim : obs_dir = f'{config.main_data_dir}marina/enkf_exps/observations/passes/'
-    else : obs_dir = f'{config.main_data_dir}marina/enkf_exps/observations/means/'
-    cmd(f'ln -s {obs_dir}amsr2_topaz_obs_{config.date}*.nc {config.enkf_run_dir}obs/')
+    if 'asyn' in config.assim : 
+        obs_dir = f'{config.main_data_dir}marina/enkf_exps/observations/passes/'
+        previous_day = (datetime.strptime(config.date, '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d')
+        cmd(f'ln -s {obs_dir}amsr2_topaz_obs_{previous_day}*.nc {config.enkf_run_dir}obs/')
+        cmd(f'ln -s {obs_dir}amsr2_topaz_obs_{config.date}0[0-2]*.nc {config.enkf_run_dir}obs/')
+    else : 
+        obs_dir = f'{config.main_data_dir}marina/enkf_exps/observations/means/'
+        cmd(f'ln -s {obs_dir}amsr2_topaz_obs_{config.date}*.nc {config.enkf_run_dir}obs/')
     
     # Link background ensemble
     cmd('ln -s ' + config.storage_dir + 'ensb/* ' + config.enkf_run_dir + 'ensemble_100/')

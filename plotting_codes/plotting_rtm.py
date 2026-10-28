@@ -1,7 +1,8 @@
 # Figures and diagnostics before and after DA
+import numpy as np
+
 import matplotlib.pyplot as plt
 import cmocean
-#
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
@@ -46,7 +47,7 @@ def subplots_rtm_tbs() :
         diff = np.nanmean(list(tb_model_ens.values()), axis = 0) - tb_sat
     
         cs1 = axes[0, ich].pcolormesh(lon_lat()[0], lon_lat()[1], mean, transform = ccrs.PlateCarree(), zorder = 2, cmap = cmocean.cm.thermal, vmin = 120, vmax = 260)
-        cs2 = axes[1, ich].pcolormesh(lon_lat()[0], lon_lat()[1], diff, transform = ccrs.PlateCarree(), zorder = 2, cmap = cmocean.cm.balance, vmin = -20, vmax = 20)
+        cs2 = axes[1, ich].pcolormesh(lon_lat()[0], lon_lat()[1], diff, transform = ccrs.PlateCarree(), zorder = 2, cmap = cmocean.cm.balance, vmin = -40, vmax = 40)
 
         subregion_plot(axes[0, ich]); subregion_plot(axes[1, ich])
         
@@ -116,8 +117,9 @@ def matrix_diagrams() :
         ow_matrix_obs[ich, :] = ow_area(sic_data, read_obs_tb(ich)[0::dpt, 0::dpt].flatten())
         ice_matrix_obs[ich, :] = ice_area(sic_data, read_obs_tb(ich)[0::dpt, 0::dpt].flatten())
         # RTM simulation
-        ow_matrix_rtm[ich, :] = ow_area(sic_data, read_obs_tb(ich)[0::dpt, 0::dpt].flatten())
-        ice_matrix_rtm[ich, :] = ice_area(sic_data, read_obs_tb(ich)[0::dpt, 0::dpt].flatten())
+        rtm_mean = np.ma.masked_array(np.nanmean(list(read_model_matrix_tb(ich).values()), axis = 0), mask = read_mask())
+        ow_matrix_rtm[ich, :] = ow_area(sic_data, rtm_mean[0::dpt, 0::dpt].flatten())
+        ice_matrix_rtm[ich, :] = ice_area(sic_data, rtm_mean[0::dpt, 0::dpt].flatten())
     
     return ow_matrix_obs, ow_matrix_rtm, ice_matrix_obs, ice_matrix_rtm
 

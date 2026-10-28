@@ -25,12 +25,33 @@ This notebook is composed of five steps:
     Plotting
 '''
 
-import importlib
-from main_imports import cmd
+import importlib, os, sys
+from subprocess import call
 
-config_filename = f'config_{config.date[0:4]}.py' # Name of you configuration file
-cmd(f'cp {config_filename} config.py')
+# Function for running in terminal
+def cmd(command):
+    print(command)
+    result = call(command, shell = True)
+    if result != 0:
+        print("Command failed: %d" % result)
+    else:
+        return result
+    
+github_rtm_path = '/home/marinadm/rtm_da/'
+
+config_filename = f'config_2021.py' # Name of you configuration file
+cmd(f'cp {github_rtm_path}config_files/{config_filename} {github_rtm_path}config.py')
+
+# Normalize the path to avoid issues with trailing slashes
+config_path = os.path.normpath(github_rtm_path)
+
+if config_path not in sys.path:
+    sys.path.insert(0, config_path)  # Add the path to sys.path
+    print(f"Added {config_path} to sys.path")
+
+# Import config once in the main notebook
 import config; importlib.reload(config)
+print(f"Config module loaded from: {config.__file__}")
 
 # Model mask file to be used in the RTM simulations and DA analysis
 cmd(f'rm {config.exps_dir}/conf/mask_topaz5.nc')
@@ -53,7 +74,7 @@ else :
 '''
 if compute_coeffs :
     
-    from rtm_dal.main_fcts_rtm_tbs import *
+    from rtm_dal_param.main_fcts_rtm_tbs import *
 
     print('Computation of DAL (Distance Along the Line) from TPD and TPA files...')
     dal_norm, _, list_tpd_files = compute_dal() 
@@ -68,7 +89,7 @@ if compute_coeffs :
 '''
 if run_rtm :
     
-    from rtm_dal.main_fcts_rtm_tbs import *
+    from rtm_dal_param.main_fcts_rtm_tbs import *
     
     if 'exp_tb_asyn' in config.assim :
         

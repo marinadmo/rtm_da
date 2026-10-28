@@ -1,13 +1,13 @@
-import datetime
+from datetime import datetime, timedelta, date
 import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Now you can import the config module
+
 import config
+print(f"Config module loaded from: {config.__file__}")
 
 def update_enkf_prm() :
-    d0 = datetime.date(1990, 1, 1)
-    d1 = datetime.date(int(config.date[0:4]), int(config.date[4:6]), int(config.date[6:8]))
+    d0 = date(1990, 1, 1)
+    previous_day = (datetime.strptime(config.date, '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d')
+    d1 = date(int(previous_day[0:4]), int(previous_day[4:6]), int(previous_day[6:8]))
     delta = d1 - d0
     #print(delta.days)
     

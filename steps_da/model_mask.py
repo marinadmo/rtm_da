@@ -1,10 +1,20 @@
 # Code that generates model mask from RTM TBs
 
-import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main_imports import *
+import numpy as np
+import xarray as xr
+from subprocess import call
+
+# Function for running in terminal
+def cmd(command):
+    print(command)
+    result = call(command, shell = True)
+    if result != 0:
+        print("Command failed: %d" % result)
+    else:
+        return result
+
 import config
+print(f"Config module loaded from: {config.__file__}")
 
 def generate_mask() :
 

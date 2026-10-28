@@ -1,0 +1,39 @@
+PRODUCT = ALL
+TYPE = Tbrightness_19v
+READER = gridded_xy
+FILE = obs/amsr2_topaz_obs_202*.nc
+PARAMETER VARNAME = tb19v
+PARAMETER LONNAME = longitude
+PARAMETER LATNAME = latitude
+Parameter TIMENAME = time
+ERROR_STD = 10 
+
+PRODUCT = ALL
+TYPE = Tbrightness_19h
+READER = gridded_xy
+FILE = obs/amsr2_topaz_obs_202*.nc
+PARAMETER VARNAME = tb19h
+PARAMETER LONNAME = longitude
+PARAMETER LATNAME = latitude
+Parameter TIMENAME = time
+ERROR_STD = 10
+
+PRODUCT = ALL
+TYPE = Tbrightness_37v
+READER = gridded_xy
+FILE = obs/amsr2_topaz_obs_202*.nc
+PARAMETER VARNAME = tb19h
+PARAMETER LONNAME = longitude
+PARAMETER LATNAME = latitude
+Parameter TIMENAME = time
+ERROR_STD = 10
+
+PRODUCT = ALL
+TYPE = Tbrightness_37h
+READER = gridded_xy
+FILE = obs/amsr2_topaz_obs_202*.nc
+PARAMETER VARNAME = tb19h
+PARAMETER LONNAME = longitude
+PARAMETER LATNAME = latitude
+Parameter TIMENAME = time
+ERROR_STD = 10

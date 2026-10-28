@@ -1,12 +1,20 @@
 # Code that generates model mask from RTM TBs
 
-import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Code to build ensemble files from model output to feed enkf-c
-from main_imports import *
-# Now you can import the config module
+import numpy as np
+import xarray as xr
+from subprocess import call
+
+# Function for running in terminal
+def cmd(command):
+    print(command)
+    result = call(command, shell = True)
+    if result != 0:
+        print("Command failed: %d" % result)
+    else:
+        return result
+
 import config
+print(f"Config module loaded from: {config.__file__}")
 
 def generate_mask() :
 

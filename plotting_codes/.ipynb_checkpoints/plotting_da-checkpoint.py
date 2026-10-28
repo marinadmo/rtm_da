@@ -1,32 +1,40 @@
 # Figures and diagnostics before and after DA
+import numpy as np
+import netCDF4
+import glob
+
 import matplotlib.pyplot as plt
 import cmocean
-#
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 from .reading_data import *
 
-import sys, os
-# Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main_imports import *
-# Add the parent directory to sys.path
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-# Now you can import the config module
 import config
+print(f"Config module loaded from: {config.__file__}")
+
+# Use absolute imports
+from steps_da.checks_enkf import check_dfs_srf
+
+#import sys, os
 # Add the parent directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../steps_da/')))
-from checks_enkf import check_dfs_srf
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#from main_imports import *
+
+# Add the parent directory to sys.path
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../steps_da/')))
+#from checks_enkf import check_dfs_srf
 
 
 def background_maps(var = 'sic', var_tb = 0) :
     lon, lat = lon_lat()
 
     if var == 'sic' : 
+        vari = 0
         sic_model_ens = read_model_matrix()
         sic_sat = read_obs()
     elif var == 'tb' : 
+        vari = None
         var_tb = 0
         sic_model_ens = read_model_matrix_tb(var_tb = 0)
         sic_sat = read_obs_tb(var_tb = 0)
@@ -35,7 +43,10 @@ def background_maps(var = 'sic', var_tb = 0) :
 
     data1 = sic_sat
     data2 = np.ma.masked_array(np.nanmean(list(sic_model_ens.values()), axis = 0), mask = new_mask)  
-    data3 = np.nanmean(list(sic_model_ens.values()), axis = 0) - sic_sat
+    if vari == 0 :
+        data3 = np.nanmean(list(sic_model_ens.values()), axis = 0).clip(0, 1) - sic_sat.clip(0, 1)
+    else :
+        data3 = np.nanmean(list(sic_model_ens.values()), axis = 0) - sic_sat
     data4 = np.ma.masked_array(np.nanstd(list(sic_model_ens.values()), axis = 0), mask = new_mask)
 
     # Create a 2x2 subplot layout
@@ -105,6 +116,13 @@ def background_maps(var = 'sic', var_tb = 0) :
         # Add annotation in the upper left corner:w
         ax.text(0.02, 0.98, params['text'], transform = ax.transAxes,
             fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
+        
+        import matplotlib.path as mpath
+        theta = np.linspace(0, 2*np.pi, 100)
+        center, radius = [0.5, 0.5], 0.5
+        verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+        circle = mpath.Path(verts * radius + center)    
+        ax.set_boundary(circle, transform = ax.transAxes)
 
     # Savefig
     fig.savefig(f'{config.figures_dir}subplots_background_{config.assim}_{var_fig}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
@@ -209,7 +227,14 @@ def no_obs_maps(vari = 0) :
 
             # Add annotation in the upper left corner
             ax.text(0.02, 0.98, params['text'], transform = ax.transAxes,
-                fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
+                fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.8))
+            
+            import matplotlib.path as mpath
+            theta = np.linspace(0, 2*np.pi, 100)
+            center, radius = [0.5, 0.5], 0.5
+            verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+            circle = mpath.Path(verts * radius + center)    
+            ax.set_boundary(circle, transform = ax.transAxes)
 
         # Savefig
         fig.savefig(f'{config.figures_dir}ssubplots_background_{config.assim}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
@@ -259,7 +284,14 @@ def no_obs_maps(vari = 0) :
 
         # Add annotation in the upper left corner
         ax.text(0.02, 0.98, params['text'], transform = ax.transAxes,
-            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
+            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.8))
+        
+        import matplotlib.path as mpath
+        theta = np.linspace(0, 2*np.pi, 100)
+        center, radius = [0.5, 0.5], 0.5
+        verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+        circle = mpath.Path(verts * radius + center)    
+        ax.set_boundary(circle, transform = ax.transAxes)
 
     # Savefig
     fig.savefig(f'{config.figures_dir}ssubplots_analysis_{config.assim}_{config.varnames[vari]}_{config.date}.png', bbox_inches = 'tight', dpi = 300)
@@ -268,6 +300,7 @@ def analysis_maps(vari = 0) :
     
     lon, lat = lon_lat()
     sic_sat = read_obs()
+    print('min, max: ', np.nanmin(sic_sat), np.nanmax(sic_sat))
     sic_model_ensb = read_model_matrix(0, vari)
     new_mask = read_mask()
   
@@ -279,8 +312,12 @@ def analysis_maps(vari = 0) :
     # Spread ensa
     data3 = np.ma.masked_array(np.nanstd(list(sic_model_ensa.values()), axis = 0), mask = new_mask)
     # Mean bias
-    data4 = np.nanmean(list(sic_model_ensa.values()), axis = 0) - sic_sat
-    mad_xb = np.nanmean(abs(np.nanmean(list(sic_model_ensb.values()), axis = 0) - sic_sat))
+    if vari == 0 :
+        data4 = np.nanmean(list(sic_model_ensa.values()), axis = 0).clip(0, 1) - sic_sat.clip(0, 1)
+        mad_xb = np.nanmean(abs(np.nanmean(list(sic_model_ensb.values()), axis = 0).clip(0, 1) - sic_sat.clip(0, 1)))
+    else :
+        data4 = np.nanmean(list(sic_model_ensa.values()), axis = 0) - sic_sat
+        mad_xb = np.nanmean(abs(np.nanmean(list(sic_model_ensb.values()), axis = 0) - sic_sat))
     mad_xa = np.nanmean(abs(data4))
     incr = np.nanmean(abs(data2))
 
@@ -344,7 +381,14 @@ def analysis_maps(vari = 0) :
 
         # Add annotation in the upper left corner
         ax.text(0.02, 0.98, params['text'], transform = ax.transAxes,
-            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5))
+            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.8))
+        
+        import matplotlib.path as mpath
+        theta = np.linspace(0, 2*np.pi, 100)
+        center, radius = [0.5, 0.5], 0.5
+        verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+        circle = mpath.Path(verts * radius + center)    
+        ax.set_boundary(circle, transform = ax.transAxes)
 
     # Savefig
     fig.savefig(f"{config.figures_dir}subplots_analysis_{config.assim}_{config.varnames[vari]}_{config.date}.png", bbox_inches = 'tight', dpi = 300)  
@@ -428,7 +472,15 @@ def plot_metrics() :
         vmin, vmax = np.nanmin(var_interp_masked), np.nanmax(var_interp_masked)
         vmean = np.nanmean(var_interp_masked)
         ax.text(0.02, 0.98, fr'$\overline{{{metric.upper()}}}$ = {vmean:.3f}', transform = ax.transAxes,
-            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.5)) 
+            fontsize = 12, verticalalignment = 'top', bbox = dict(facecolor = 'white', alpha = 0.8)) 
+        
+        import matplotlib.path as mpath
+        theta = np.linspace(0, 2*np.pi, 100)
+        center, radius = [0.5, 0.5], 0.5
+        verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+        circle = mpath.Path(verts * radius + center)    
+        ax.set_boundary(circle, transform = ax.transAxes)
+
     ratio = data['dfs'][:]/data['srf'][:];
     print('Mean ratio dfs/srf: ', np.nanmean(ratio))
     print('Mean dfs:', np.nanmean(data['dfs'][:]))

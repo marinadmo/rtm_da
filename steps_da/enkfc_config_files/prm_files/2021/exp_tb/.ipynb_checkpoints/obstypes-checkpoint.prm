@@ -1,0 +1,39 @@
+NAME = Tbrightness_19v
+ISSURFACE = 1
+VAR = tb19v
+ASYNC = 0
+HFUNCTION = standard  #vertsum
+MINVALUE = 0
+MAXVALUE = 500.0
+RFACTOR = 2 #50 #20 #10 #22
+LOCRAD = 50
+
+NAME = Tbrightness_19h
+ISSURFACE = 1
+VAR = tb19h
+ASYNC = 0
+HFUNCTION = standard  #vertsum
+MINVALUE = 0
+MAXVALUE = 500.0
+RFACTOR = 2 #50 #20 #10 #22
+LOCRAD = 50
+
+NAME = Tbrightness_37v
+ISSURFACE = 1
+VAR = tb19h
+ASYNC = 0
+HFUNCTION = standard  #vertsum
+MINVALUE = 0
+MAXVALUE = 500.0
+RFACTOR = 2 #50 #20 #10 #22
+LOCRAD = 50
+
+NAME = Tbrightness_37h
+ISSURFACE = 1
+VAR = tb19h
+ASYNC = 0
+HFUNCTION = standard  #vertsum
+MINVALUE = 0
+MAXVALUE = 500.0
+RFACTOR = 2 #50 #20 #10 #22
+LOCRAD = 50
